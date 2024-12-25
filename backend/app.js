@@ -12,6 +12,11 @@ app.use(express.json());
 // Routes
 app.use('/api', authRoutes);
 
+
+const payrollAccountantRoutes = require('./routes/payrollAccountantRoutes'); // Import routes
+app.use('/api/payroll', payrollAccountantRoutes); // Register routes
+
+
 // Default Route
 app.get('/', (req, res) => {
   res.send('Welcome to the Login API. Use /api for endpoints.');
