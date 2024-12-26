@@ -65,8 +65,8 @@ router.post("/employees/filter", async (req, res) => {
 });
 
 // Search Employees by Term
-router.get("/employees/search", async (req, res) => {
-  const { term } = req.query;
+router.get("/employees/search/:term", async (req, res) => {
+  const { term } = req.params;
   console.log("enterd in search route");
 
   if (!term || term.trim() === "") {
@@ -78,7 +78,7 @@ router.get("/employees/search", async (req, res) => {
   try {
     const query = `
       SELECT * FROM employees
-      WHERE name LIKE ? 
+      WHERE name LIKE ?
          OR category LIKE ?
          OR department LIKE ?
          OR designation LIKE ?
@@ -92,10 +92,81 @@ router.get("/employees/search", async (req, res) => {
       searchTerm,
       searchTerm,
     ]);
+    //console.log(rows)
     res.json(rows);
   } catch (error) {
     console.error("Error searching employees:", error);
     res.status(500).json({ message: "Server error while searching employees" });
+  }
+});
+
+
+
+
+
+
+
+router.get("/employees/:id/additional-fields", async (req, res) => {
+  console.log("In api");
+  const { id } = req.params;
+
+  
+
+  try {
+    // Fetch employee details
+    const [employeeRows] = await pool.query(`SELECT * FROM employees WHERE id = ?`, [id]);
+    if (employeeRows.length === 0) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+
+    //console.log("If passed");
+    const employee = employeeRows[0];
+
+    console.log(employee.category);
+
+    // Query the respective table based on category
+    let query = "";
+
+
+    switch (employee.category) {
+      case "TTS Staff":
+        console.log("Switch TTs Staff");
+
+        query = `SELECT * FROM tts_staff_fields WHERE employee_id = ?`;
+        break;
+      case "TTS Support Staff":
+        query = `SELECT * FROM tts_support_staff_fields WHERE employee_id = ?`;
+        break;
+      case "Support Staff":
+        query = `SELECT * FROM support_staff_fields WHERE employee_id = ?`;
+        break;
+      case "School Staff RA":
+        query = `SELECT * FROM school_staff_ra_fields WHERE employee_id = ?`;
+        break;
+      default:
+        return res.status(400).json({ message: "Invalid category" });
+    }
+
+    //console.log("switch passed")
+
+    const [fields] = await pool.query(query, [id]);
+
+    if (fields.length === 0) {
+      return res.status(404).json({ message: "No additional fields found for this employee" });
+    }
+
+    res.json({
+      employee: {
+        id: employee.id,
+        name: employee.name,
+        category: employee.category,
+        designation: employee.designation,
+      },
+      additional_fields: fields[0],
+    });
+  } catch (error) {
+    console.error("Error fetching additional fields:", error);
+    res.status(500).json({ message: "Server error while fetching additional fields" });
   }
 });
 

@@ -13,6 +13,8 @@ const LoginPage = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
+      console.log(email);
+      console.log(password);
       const response = await api.post('/api/login', { email, password });
       dispatch(setUser({ user: response.data.user, token: response.data.token, roles: response.data.roles }));
       navigate('/roles'); // Navigate to roles page

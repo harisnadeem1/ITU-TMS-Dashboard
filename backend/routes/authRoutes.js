@@ -9,6 +9,8 @@ const SECRET_KEY = process.env.SECRET_KEY || 'your-secret-key';
 // Login Endpoint
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
+    console.log(email);
+    console.log(password);
   
     try {
       console.log('Login request received:', email, password);
