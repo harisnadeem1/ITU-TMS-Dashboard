@@ -10,13 +10,28 @@ const PayrollAccountantDashboard = () => {
   const [showPopup, setShowPopup] = useState(false); // State to toggle filter popup
   const [filters, setFilters] = useState({}); // State to store applied filters
 
-  // Fetch employees based on filters
-  const fetchEmployees = async (filters = {}) => {
+  // Fetch employees based on filters or search term
+  const fetchEmployees = async (filters = {}, searchTerm = '') => {
+    
     try {
-      const response = Object.keys(filters).length
-        ? await api.post('/api/payroll/employees/filter', filters) // Fetch filtered employees
-        : await api.get('/api/payroll/employees'); // Fetch all employees if no filters
-      setEmployees(response.data);
+      if (searchTerm) {
+        // Search employees by term
+        console.log("in Search Term");
+        const response = await api.get(`/api/payroll/employees/search?term=${encodeURIComponent(searchTerm)}`);
+        console.log("Search Response:"); 
+
+        setEmployees(response.data);
+      } else if (Object.keys(filters).length) {
+        // Fetch filtered employees
+        console.log("in Filters");
+        const response = await api.post('/api/payroll/employees/filter', filters);
+        setEmployees(response.data);
+      } else {
+        // Fetch all employees
+        console.log("in All");
+        const response = await api.get('/api/payroll/employees');
+        setEmployees(response.data);
+      }
     } catch (error) {
       console.error('Error fetching employees:', error);
     }
@@ -24,10 +39,8 @@ const PayrollAccountantDashboard = () => {
 
   const handleRemoveFilters = () => {
     setFilters({}); // Reset filters
-    setShowPopup(false); // Close the popup
     fetchEmployees(); // Fetch all employees
   };
-  
 
   useEffect(() => {
     // Fetch all employees initially
@@ -46,6 +59,11 @@ const PayrollAccountantDashboard = () => {
     fetchEmployees(appliedFilters); // Fetch filtered employees
   };
 
+  // Handle search functionality
+  const handleSearch = (term) => {
+    fetchEmployees({}, term); // Fetch employees based on search term
+  };
+
   return (
     <div>
       <Header
@@ -54,7 +72,7 @@ const PayrollAccountantDashboard = () => {
       />
       <FilterSearchEdit
         onFilterClick={togglePopup} // Open the filter popup
-        onSearch={(term) => alert(`Search for ${term}`)}
+        onSearch={handleSearch} // Pass the search function
         onEdit={() => alert('Edit clicked')}
       />
       <EmployeesTable
