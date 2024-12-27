@@ -170,4 +170,27 @@ router.get("/employees/:id/additional-fields", async (req, res) => {
   }
 });
 
+
+
+
+router.post("/employees/update", async (req, res) => {
+  const { employees } = req.body;
+
+  try {
+    for (const employee of employees) {
+      await pool.query(
+        `UPDATE employees 
+         SET branch_name = ?, branch_code = ?, bank_account_no = ? 
+         WHERE id = ?`,
+        [employee.branch_name, employee.branch_code, employee.account_number, employee.id]
+      );
+    }
+    res.json({ message: "Employees updated successfully" });
+  } catch (error) {
+    console.error("Error updating employees:", error);
+    res.status(500).json({ message: "Server error while updating employees" });
+  }
+});
+
+
 module.exports = router;

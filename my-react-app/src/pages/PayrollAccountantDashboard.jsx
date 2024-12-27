@@ -4,6 +4,7 @@ import FilterSearchEdit from "../components/FilterSearchEdit";
 import EmployeesTable from "../components/EmployeesTable";
 import FilterPopup from "../components/FilterPopup";
 import AdditionalFieldsModal from "../components/AdditionalFieldsModal";
+import EditEmployeesModal from "../components/EditEmployeesModal"; // Import the Edit Modal
 import api from "../services/api";
 
 const PayrollAccountantDashboard = () => {
@@ -13,6 +14,8 @@ const PayrollAccountantDashboard = () => {
   const [selectedEmployee, setSelectedEmployee] = useState(null); // Currently selected employee
   const [additionalFields, setAdditionalFields] = useState(null); // Additional fields for the selected employee
   const [showModal, setShowModal] = useState(false); // State to toggle additional fields modal
+  const [showEditModal, setShowEditModal] = useState(false); // State to toggle edit modal
+  const [employeesToEdit, setEmployeesToEdit] = useState([]); // Employees to be edited
 
   // Fetch employees based on filters or search term
   const fetchEmployees = async (filters = {}, searchTerm = "") => {
@@ -70,14 +73,35 @@ const PayrollAccountantDashboard = () => {
     try {
       console.log(`Fetching additional fields for employee ID: ${employeeId}`);
       const response = await api.get(`/api/payroll/employees/${employeeId}/additional-fields`);
-      console.log(response);
-
       setSelectedEmployee(response.data.employee);
       setAdditionalFields(response.data.additional_fields);
       setShowModal(true); // Show the modal
-      console.log("Model set as true");
     } catch (error) {
       console.error("Error fetching additional fields:", error);
+    }
+  };
+
+  // Handle edit functionality
+  const handleEdit = (selectedIds) => {
+    if (!Array.isArray(selectedIds) || selectedIds.length === 0) {
+      console.error("No employees selected for editing.");
+      return;
+    }
+  
+    const selected = employees.filter((emp) => selectedIds.includes(emp.id));
+    setEmployeesToEdit(selected);
+    setShowEditModal(true);
+  };
+  
+
+  // Handle submit edit changes
+  const handleSubmitEdit = async (editedEmployees) => {
+    try {
+      await api.post("/api/payroll/employees/update", { employees: editedEmployees });
+      setShowEditModal(false);
+      fetchEmployees(); // Refresh data after edit
+    } catch (error) {
+      console.error("Error updating employees:", error);
     }
   };
 
@@ -90,11 +114,12 @@ const PayrollAccountantDashboard = () => {
       <FilterSearchEdit
         onFilterClick={togglePopup}
         onSearch={handleSearch}
-        onEdit={() => alert("Edit clicked")}
+        onEdit={handleEdit}
       />
       <EmployeesTable
         employees={employees}
         onAdditionalFieldsClick={fetchAdditionalFields}
+        onEdit={handleEdit}
       />
       {showPopup && (
         <FilterPopup
@@ -108,6 +133,13 @@ const PayrollAccountantDashboard = () => {
           employee={selectedEmployee}
           fields={additionalFields}
           onClose={() => setShowModal(false)}
+        />
+      )}
+      {showEditModal && (
+        <EditEmployeesModal
+          employees={employeesToEdit}
+          onSubmit={handleSubmitEdit}
+          onClose={() => setShowEditModal(false)}
         />
       )}
     </div>
